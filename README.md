@@ -26,13 +26,22 @@ Nato bot pošlje sporočilo z contentom (pred `---`) v CHANNEL_ID_FOR_SENDING (e
 
 ### Editing
 
-Sporočilo v CHANNEL_ID_FOR_SETTING lahko editaš in bot bo uveljavil spremembe. Npr. lahko 
+Za editanje pošlješ v CHANNEL_ID_FOR_SETTING še eno sporočilo:
+
+```
+content
+---
+<emoji> <roleId>
+<emoji2> <roleId2>
+...
+---
+<botMessageId>
+```
+
+Potem bo bot edital message, ki si ga specificiral (torej botMessageId). Za editanje lahko npr.
 - spremeniš content ("Koliko časa si na svetu?")
 - spremeniš katerikoli emoji (`🍞 123456789012345678`)
 - spremeniš katerikoli role id (`🔞 098765432109876543`)
 - oboje (`🍞 098765432109876543`)
 - all of the above, za katerikoli emoji
 
-### Deletion
-
-Če zbrišeš tvoje sporočilo, bo bot tudi zbrisal svoje sporočilo. (Ni zelo uporabno ampak obstaja)
