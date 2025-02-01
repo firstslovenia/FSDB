@@ -1,0 +1,16 @@
+{
+  "name": "fsdb",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prisma": "6.2.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "6.2.1",
+    "discord.js": "^14.17.3"
+  }
+}

@@ -1,0 +1,23 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model ReactionRole {
+    id               String              @id
+    setterId         String              @unique
+    questionContents String
+    emojis           ReactionRoleEmoji[]
+}
+
+model ReactionRoleEmoji {
+    id             Int          @id @default(autoincrement())
+    emoji          String // ali `name:id` ali unicode
+    roleId         String
+    reactionRole   ReactionRole @relation(fields: [reactionRoleId], references: [id], onDelete: Cascade)
+    reactionRoleId String
+}
