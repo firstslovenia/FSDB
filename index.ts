@@ -29,9 +29,77 @@ const resolveEmoji = (emoji: PartialEmoji) =>
 
 client.on("messageCreate", async (message) => {
   if (message.channel.id === process.env.CHANNEL_ID_FOR_SETTING) {
-    const [questionContents, emojiSyntax] = message.content.split("---");
+    const [questionContents, emojiSyntax, editId] =
+      message.content.split("---");
     const emojis = emojiSyntax?.trim().split("\n");
     if (!emojis) return; // ko se modi pogovarjajo v channelu za setanje
+    if (editId) {
+      const reactionRole = await prisma.reactionRole.findUnique({
+        where: { id: editId.trim() },
+        include: { emojis: true },
+      });
+      console.log(editId);
+      if (!reactionRole) return;
+      const emojis = emojiSyntax
+        .trim()
+        .split("\n")
+        .map((i) => [
+          resolveEmoji(parseEmoji(i.split(" ")[0])!),
+          i.split(" ")[1],
+        ]);
+      const onlyEmojis = emojis.map((i) => i[0]);
+
+      const msg = await (
+        (await client.channels.fetch(
+          process.env.CHANNEL_ID_FOR_SENDING!
+        )) as TextChannel
+      ).messages.fetch(reactionRole.id);
+
+      const previousReactions = msg.reactions.cache.clone();
+
+      await msg.edit(questionContents);
+
+      for (const [, reaction] of msg.reactions.cache.filter(
+        (i) => !onlyEmojis.includes(i.emoji.identifier)
+      ))
+        await reaction.remove();
+
+      for (const emoji of onlyEmojis.filter((i) => !msg.reactions.cache.has(i)))
+        await msg.react(emoji);
+
+      await prisma.reactionRole.update({
+        where: { id: reactionRole.id },
+        data: {
+          questionContents,
+          emojis: {
+            update: emojis // kjer je role id drugacen
+              .filter((emoji) =>
+                previousReactions
+                  .map((i) => i.emoji.identifier)
+                  .includes(emoji[0])
+              )
+              .map(([emoji, roleId]) => ({
+                where: {
+                  id: reactionRole.emojis.find((i) => i.emoji == emoji)!.id,
+                },
+                data: { emoji, roleId: roleId.match(/\d+/)![0] },
+              })),
+
+            create: emojis // novi emojiji
+              .filter(
+                (emoji) =>
+                  !previousReactions
+                    .map((i) => i.emoji.identifier)
+                    .includes(emoji[0])
+              )
+              .map(([emoji, roleId]) => ({ emoji, roleId: roleId.match(/\d+/)![0] })),
+
+            deleteMany: { emoji: { notIn: onlyEmojis } }, // izbrisani emojiji
+          },
+        },
+      });
+      return;
+    }
     const msg = await (
       (await client.channels.fetch(
         process.env.CHANNEL_ID_FOR_SENDING!
@@ -45,82 +113,12 @@ client.on("messageCreate", async (message) => {
     await prisma.reactionRole.create({
       data: {
         id: msg.id,
-        setterId: message.id,
         questionContents,
         emojis: {
           create: emojis.map((emoji) => ({
             emoji: resolveEmoji(parseEmoji(emoji.split(" ")[0])!),
-            roleId: emoji.split(" ")[1],
+            roleId: emoji.split(" ")[1].match(/\d+/)![0],
           })),
-        },
-      },
-    });
-  }
-});
-
-client.on("messageUpdate", async (_, newMessage) => {
-  if (newMessage.channel.id === process.env.CHANNEL_ID_FOR_SETTING) {
-    const reactionRole = await prisma.reactionRole.findUnique({
-      where: { setterId: newMessage.id },
-      include: { emojis: true },
-    });
-    if (!reactionRole) return;
-    const [questionContents, emojiSyntax] = newMessage.content.split("---");
-    const emojis = emojiSyntax
-      .trim()
-      .split("\n")
-      .map((i) => [
-        resolveEmoji(parseEmoji(i.split(" ")[0])!),
-        i.split(" ")[1],
-      ]);
-    const onlyEmojis = emojis.map((i) => i[0]);
-
-    const msg = await (
-      (await client.channels.fetch(
-        process.env.CHANNEL_ID_FOR_SENDING!
-      )) as TextChannel
-    ).messages.fetch(reactionRole.id);
-
-    const previousReactions = msg.reactions.cache.clone();
-
-    await msg.edit(questionContents);
-
-    for (const [, reaction] of msg.reactions.cache.filter(
-      (i) => !onlyEmojis.includes(i.emoji.identifier)
-    ))
-      await reaction.remove();
-
-    for (const emoji of onlyEmojis.filter((i) => !msg.reactions.cache.has(i)))
-      await msg.react(emoji);
-
-    await prisma.reactionRole.update({
-      where: { id: reactionRole.id },
-      data: {
-        questionContents,
-        emojis: {
-          update: emojis // kjer je role id drugacen
-            .filter((emoji) =>
-              previousReactions
-                .map((i) => i.emoji.identifier)
-                .includes(emoji[0])
-            )
-            .map(([emoji, roleId]) => ({
-              where: {
-                id: reactionRole.emojis.find((i) => i.emoji == emoji)!.id,
-              },
-              data: { emoji, roleId },
-            })),
-
-          create: emojis // novi emojiji
-            .filter(
-              (emoji) =>
-                !previousReactions
-                  .map((i) => i.emoji.identifier)
-                  .includes(emoji[0])
-            )
-            .map(([emoji, roleId]) => ({ emoji, roleId })),
-
-          deleteMany: { emoji: { notIn: onlyEmojis } }, // izbrisani emojiji
         },
       },
     });
@@ -169,23 +167,6 @@ client.on("messageReactionRemove", async (reaction, user) => {
   const member = await reaction.message.guild?.members.fetch(user.id);
   if (!member) return;
   await member.roles.remove(roleId).catch(console.error);
-});
-
-client.on("messageDelete", async (message) => {
-  if (message.channel.id === process.env.CHANNEL_ID_FOR_SETTING) {
-    const reactionRole = await prisma.reactionRole.findUnique({
-      where: { setterId: message.id },
-    });
-    if (!reactionRole) return;
-    await prisma.reactionRole.delete({ where: { id: reactionRole.id } });
-    await (
-      await (
-        (await client.channels.fetch(
-          process.env.CHANNEL_ID_FOR_SENDING!
-        )) as TextChannel
-      ).messages.fetch(reactionRole.id)
-    ).delete();
-  }
 });
 
 client.on("ready", async (client) => {

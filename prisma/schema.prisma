@@ -9,7 +9,6 @@ datasource db {
 
 model ReactionRole {
     id               String              @id
-    setterId         String              @unique
     questionContents String
     emojis           ReactionRoleEmoji[]
 }
