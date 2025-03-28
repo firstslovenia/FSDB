@@ -38,15 +38,17 @@ client.on("messageCreate", async (message) => {
         where: { id: editId.trim() },
         include: { emojis: true },
       });
-      console.log(editId);
       if (!reactionRole) return;
       const emojis = emojiSyntax
         .trim()
         .split("\n")
-        .map((i) => [
-          resolveEmoji(parseEmoji(i.split(" ")[0])!),
-          i.split(" ")[1],
-        ]);
+        .map(
+          (i) =>
+            [
+              resolveEmoji(parseEmoji(i.split(" ")[0])!),
+              i.split(" ").slice(1),
+            ] as const
+        );
       const onlyEmojis = emojis.map((i) => i[0]);
 
       const msg = await (
@@ -78,11 +80,14 @@ client.on("messageCreate", async (message) => {
                   .map((i) => i.emoji.identifier)
                   .includes(emoji[0])
               )
-              .map(([emoji, roleId]) => ({
+              .map(([emoji, roleIds]) => ({
                 where: {
                   id: reactionRole.emojis.find((i) => i.emoji == emoji)!.id,
                 },
-                data: { emoji, roleId: roleId.match(/\d+/)![0] },
+                data: {
+                  emoji,
+                  roleIds: roleIds.map((roleId) => roleId.match(/\d+/)![0]),
+                },
               })),
 
             create: emojis // novi emojiji
@@ -92,7 +97,10 @@ client.on("messageCreate", async (message) => {
                     .map((i) => i.emoji.identifier)
                     .includes(emoji[0])
               )
-              .map(([emoji, roleId]) => ({ emoji, roleId: roleId.match(/\d+/)![0] })),
+              .map(([emoji, roleIds]) => ({
+                emoji,
+                roleIds: roleIds.map((roleId) => roleId.match(/\d+/)![0]),
+              })),
 
             deleteMany: { emoji: { notIn: onlyEmojis } }, // izbrisani emojiji
           },
@@ -117,7 +125,11 @@ client.on("messageCreate", async (message) => {
         emojis: {
           create: emojis.map((emoji) => ({
             emoji: resolveEmoji(parseEmoji(emoji.split(" ")[0])!),
-            roleId: emoji.split(" ")[1].match(/\d+/)![0],
+            roleIds: emoji
+              .split(" ")
+              .slice(1)
+              .filter(Boolean) // because autocompleting roles da space na koncu for some reason
+              .map((roleId) => roleId.match(/\d+/)![0]),
           })),
         },
       },
@@ -142,11 +154,11 @@ client.on("messageReactionAdd", async (reaction, user) => {
     },
   });
   if (!reactionRole) return;
-  const { roleId } = reactionRole.emojis[0];
+  const { roleIds } = reactionRole.emojis[0];
 
   const member = await reaction.message.guild?.members.fetch(user.id);
   if (!member) return;
-  await member.roles.add(roleId).catch(console.error);
+  await member.roles.add(roleIds).catch(console.error);
 });
 
 client.on("messageReactionRemove", async (reaction, user) => {
@@ -162,11 +174,11 @@ client.on("messageReactionRemove", async (reaction, user) => {
     },
   });
   if (!reactionRole) return;
-  const { roleId } = reactionRole.emojis[0];
+  const { roleIds } = reactionRole.emojis[0];
 
   const member = await reaction.message.guild?.members.fetch(user.id);
   if (!member) return;
-  await member.roles.remove(roleId).catch(console.error);
+  await member.roles.remove(roleIds).catch(console.error);
 });
 
 client.on("ready", async (client) => {

@@ -16,7 +16,7 @@ model ReactionRole {
 model ReactionRoleEmoji {
     id             Int          @id @default(autoincrement())
     emoji          String // ali `name:id` ali unicode
-    roleId         String
+    roleIds        String[]
     reactionRole   ReactionRole @relation(fields: [reactionRoleId], references: [id], onDelete: Cascade)
     reactionRoleId String
 }
