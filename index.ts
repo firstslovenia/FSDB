@@ -38,7 +38,10 @@ client.on("messageCreate", async (message) => {
         where: { id: editId.trim() },
         include: { emojis: true },
       });
-      if (!reactionRole) return;
+      if (!reactionRole)
+        return await message.reply(
+          `Reaction role z idjem \`${editId}\` ne obstaja lol`
+        );
       const emojis = emojiSyntax
         .trim()
         .split("\n")
@@ -46,7 +49,7 @@ client.on("messageCreate", async (message) => {
           (i) =>
             [
               resolveEmoji(parseEmoji(i.split(" ")[0])!),
-              i.split(" ").slice(1),
+              i.split(" ").slice(1).filter(Boolean),
             ] as const
         );
       const onlyEmojis = emojis.map((i) => i[0]);
