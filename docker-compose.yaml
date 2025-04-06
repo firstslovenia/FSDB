@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:15
+    container_name: fsdb-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fsdb
+      POSTGRES_USER: fsdb_user
+      POSTGRES_PASSWORD: supersecret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  bot:
+    build: .
+    container_name: fsdb-bot
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://fsdb_user:supersecret@db:5432/fsdb
+    command: ["bun", "index.ts"]
+
+volumes:
+  postgres_data:
