@@ -20,5 +20,10 @@ services:
       DATABASE_URL: postgres://fsdb_user:supersecret@db:5432/fsdb
     command: ["bun", "index.ts"]
 
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - 8080:8080
 volumes:
   postgres_data:

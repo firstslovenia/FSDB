@@ -12,4 +12,4 @@ RUN bun install --verbose
 
 RUN bunx prisma generate
 
-CMD [ "bun", "run", "start" ]
+CMD [ "bun", "index.ts" ]
