@@ -10,6 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # adminer:
+  #   image: adminer
+  #   ports:
+  #     - 8080:8080
+
   bot:
     build: .
     container_name: fsdb-bot
@@ -18,7 +23,7 @@ services:
       - db
     environment:
       DATABASE_URL: postgres://fsdb_user:supersecret@db:5432/fsdb
-    command: ["bun", "index.ts"]
+    # command: ["sh", "-c", "bunx prisma migrate deploy && bun run start"]
 
 volumes:
   postgres_data:
