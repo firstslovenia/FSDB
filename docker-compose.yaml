@@ -15,15 +15,22 @@ services:
   #   ports:
   #     - 8080:8080
 
+  # bot:
+  #   build: .
+  #   container_name: fsdb-bot
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URL: postgres://fsdb_user:supersecret@db:5432/fsdb
+
   bot:
-    build: .
-    container_name: fsdb-bot
+    image: ghcr.io/firstslovenia/fsdb
     restart: unless-stopped
     depends_on:
       - db
     environment:
       DATABASE_URL: postgres://fsdb_user:supersecret@db:5432/fsdb
-    # command: ["sh", "-c", "bunx prisma migrate deploy && bun run start"]
 
 volumes:
   postgres_data:
