@@ -138,6 +138,10 @@ client.on("messageCreate", async (message) => {
       },
     });
   }
+
+  if(message.content == "=ping"){
+    message.channel.send("Hello" + message.channelId + (message.channelId == process.env.CHANNEL_ID_FOR_SETTING ? "TRUE" : "FALSE") + " " + (message.channelId == process.env.CHANNEL_ID_FOR_SENDING ? "TRUE" : "FALSE"));
+  }
 });
 
 client.on("messageReactionAdd", async (reaction, user) => {
