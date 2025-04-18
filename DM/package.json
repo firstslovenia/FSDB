@@ -1,0 +1,17 @@
+{
+  "name": "dm",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.4"
+  }
+}
